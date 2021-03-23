@@ -19,13 +19,7 @@ add_action('rest_api_init', function () {
     ));
 });
 
-/*
-* payload will include resource_url and resource_type
-{
-    "resource_url" : "https://ssapiX.shipstation.com/orders?storeID=123456&importBatch=1ab23c4d-12ab-1abc-a1bc-a12b12cdabcd",
-    "resource_type":"ORDER_NOTIFY"
-}
-*/
+
 
 function ssu_receive_shipstation_webhook_payload($request) {
     $params = $request->get_params();
@@ -37,6 +31,7 @@ function ssu_receive_shipstation_webhook_payload($request) {
         case 'ORDER_NOTIFY':
             ssu_process_new_order($params);
         break;
+        // for potential future use, these are Shipstation's other resource_type's
         // case 'ITEM_ORDER_NOTIFY': break;
         // case 'SHIP_NOTIFY': break;
         // case 'ITEM_SHIP_NOTIFY': break;
@@ -46,49 +41,111 @@ function ssu_receive_shipstation_webhook_payload($request) {
 function ssu_process_new_order($params) {
     $date = new DateTime();
 
-    // create post with payload
+    // break apart the resource_url into pieces
+    $url_components = parse_url($params['resource_url']);
+    parse_str($url_components['query'], $url_params);
+
+    // create post to save payload, with batch id as title
     $new_post = array(
-        'post_title' => 'new order '. $date->format('Y m d T h m s'),
+        'post_title' => $url_params['importBatch'],
         'post_content' => json_encode($params),
         'post_type' => 'post',
     );
     $post_id = wp_insert_post($new_post);
 
-    // Use the payload to GET order data
-    $orderData = ssu_get_ss_order_details($params['resource_url']);
+    // Use the payload to GET order(s) data
+    $orderData = ssu_get_batch_details($params['resource_url']);
 
     // save acf field data
-    update_field('new_order_payload', json_encode($params), $post_id);
-    update_field('original_order_details', json_encode($orderData), $post_id);
+    update_field('new_orders_payload', json_encode($params), $post_id);
+    update_field('new_orders_response', json_encode($orderData), $post_id);
 
-    // parse order data for any changes needed
-    $orderChanges = ssu_parse_order_for_changes($post_id);
+    // kick off action that will process in background
+    wp_schedule_single_event( time(), 'ssu_handle_new_batch_of_orders', array($post_id) );
+    // wp_schedule_single_event( time() + 3600, 'ssu_parse_new_order', array() );
 
-    if (isset($orderChanges['update'])) {
-        // change the original order
-
-        update_field('updated_order_details', json_encode($orderChanges['update']), $post_id);
-    }
-
-    if (isset($orderChanges['new'])) {
-        // create a new order
-    }
-
-    return $request->get_params();
-}
-
-function ssu_parse_order_for_changes($post_id) {
-    $orderChanges = array();
-    $orderDetails = get_field('original_order_details', $post_id);
-
-    return $orderChanges;
+    return $post_id;
 }
 
 
-//https://www.shipstation.com/docs/api/orders/get-order/
-function ssu_get_ss_order_details($url) {
+// Define action to be called with 'wp_schedule_single_event'
+add_action( 'ssu_handle_new_batch_of_orders', 'ssu_process_batch_of_orders' );
 
-    // $url = 'https://ssapi.shipstation.com/orders/645887787';
+
+// Processes a batch of orders received from shipstation resource_url
+function ssu_process_batch_of_orders($batch_id) {
+    // get orders from batch post's json
+    $orderDetails = json_decode(get_field('original_order_details', $batch_id), true);
+
+    // loop thru all orders
+    foreach ($orderDetails['orders'] as $order) {
+        // create new post
+        $new_post = array(
+            'post_title' => $order['orderId'],
+            'post_content' => json_encode($order),
+            'post_type' => 'post',
+        );
+        $post_id = wp_insert_post($new_post);
+
+        // save initial acf data
+        update_field('batch_post', $batch_id, $post_id);
+        update_field('original_order_details', json_encode($order), $post_id);
+
+        // parse order data for any changes needed
+        $orderChanges = ssu_parse_single_order_for_changes($post_id);
+    }
+    // return $orderChanges;
+}
+
+// Parses a single order for any needed changes
+function ssu_parse_single_order_for_changes($post_id) {
+    $sku_match = SSU_SKU_SEARCHTERM;
+    $changes = array();
+    $new_order_items = array();
+    $order = json_decode(get_field('original_order_details', $post_id), true);
+
+    // if only 1 item, no need to do anything
+    if (count($order['items']) <= 1) return $changes;
+
+    // look for SKUs that start with
+    foreach ($order['items'] as $key => $item) {
+        // check if SKU meets criteria
+        if (strpos($item['sku'], $sku_match) === false ) {
+            $new_order_items[] = $item; // add item to new order
+            unset($order['items'][$key]); // remove item from original order
+        }
+    }
+
+    // return if no changes to make
+    if (empty($new_order_items)) return $changes;
+
+    // duplicate original, set items, unset order-unique fields
+    // unset original fields
+    $new_order = $order;
+    $new_order['items'] = $new_order_items;
+    unset($new_order['orderKey']);
+
+    // encode json
+    $order = json_encode($order);
+    $new_order = json_encode($new_order);
+
+    // update original order at ss
+    ssu_update_ss_order_details($order);
+    // save updated order acf
+    update_field('updated_order_details', json_encode($order), $post_id);
+
+
+    // create new order at ss
+    ssu_update_ss_order_details($new_order);
+    // save new order acf
+    update_field('additional_order_details', json_encode($new_order), $post_id);
+
+    return $changes;
+}
+
+// Get Batch Orders (from payload's resource_url)
+// https://www.shipstation.com/docs/api/orders/get-order/
+function ssu_get_batch_details($url = null) {
     $args = array(
         'httpversion' => '1.1',
         'headers' => array(
@@ -97,14 +154,17 @@ function ssu_get_ss_order_details($url) {
         )
     );
     $response = wp_remote_get( $url, $args );
-
-    return wp_remote_retrieve_body($response);
+    $body = wp_remote_retrieve_body($response);
+    return $body;
 }
 
 
 
-//https://www.shipstation.com/docs/api/orders/create-update-order/
-function ssu_update_ss_order_details($data) {
+// Create or Update a Shipstation Order
+// https://www.shipstation.com/docs/api/orders/create-update-order/
+function ssu_update_ss_order_details($order_data) {
+    $url = SSU_SS_BASEURL . '/orders/createorder';
+
     // update original ss order
     $args = array(
         'httpversion' => '1.1',
@@ -112,14 +172,9 @@ function ssu_update_ss_order_details($data) {
             'Content-Type' => 'application/json',
             'Authorization' => 'Basic ' . base64_encode( '9643ce8bd18945da93a3769a85c2b2b5' . ':' . '5fb3c382e9cb4dff9dc0c009987cc0ca' )
         ),
-        'body' => wp_json_encode($data)
+        'body' => wp_json_encode($order_data)
     );
     $response = wp_remote_post( $url, $args );
-
-}
-
-function ssu_add_new_ss_order($data) {
-    // create new ss order
 }
 
 
@@ -136,19 +191,10 @@ API Secret
 5fb3c382e9cb4dff9dc0c009987cc0ca
 
 
-GET /orders/orderId HTTP/1.1
-Host: ssapi.shipstation.com
-Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
-
-645887787
-177282875
-
-
 
 You should be able to trigger a webhook when creating orders through
 the open API. It is considered a new order within ShipStation so it
 should behave the same way as a new order created within the UI
-
 
 Use the CSV export for testing
 */
