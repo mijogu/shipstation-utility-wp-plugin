@@ -8,6 +8,10 @@
  * Domain Path:       /languages
  */
 
+defined('SSU_SS_BASEURL') || define('SSU_SS_BASEURL', 'https://https://ssapi6.shipstation.com');
+defined('SSU_SKU_SEARCHTERM') || define('SSU_SKU_SEARCHTERM', 'DOD');
+
+
 add_action('rest_api_init', function () {
     register_rest_route( 'shipstation-utility/v1', 'neworder',array(
             'methods'  => 'POST',
