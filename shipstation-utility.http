@@ -7,16 +7,17 @@
     # https://github.com/Huachao/vscode-restclient
 
 
-@host = https://bnutility1.wpengine.com
+# @host = https://bnutility1.wpengine.com
+@host = https://boundless-utility.local
 @token = 1
 @username = butility
-@password = 4D2MxFcikpwL-KBg@y
+@password = aravJWDWdi7*zH1TR6Lm@nFL
 @email = mike2@darngood.io
 
 
 
 ##########################################
-### GET ALL USERS
+### UTILITY SITE API
 ##########################################
 
 GET {{host}}/wp-json/wp/v2/users HTTP/1.1
@@ -31,21 +32,40 @@ content-type: application/json
 Authorization: Basic {{username}}:{{password}}
 
 {
-    "resource_url" : "https://ssapi6.shipstation.com/orders?storeID=385230&amp;importBatch=45560603-7311-4ba1-abb8-63f77dd60ad5",
+    "resource_url" : "https://ssapi6.shipstation.com/orders?storeID=385230&amp;importBatch=6aa5b480-e991-4e2a-957d-e48aec3979e8",
     "resource_type" : "ORDER_NOTIFY"
 }
 
+##########################################
+### SHIPSTATION API
+##########################################
+
+# Get all orders
 ###
 GET /orders/ HTTP/1.1
-Host: ssapi.shipstation.com
+Host: ssapi6.shipstation.com
 Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
 
 
+# Test resource url
 ###
-GET /orders?storeID=123456&importBatch=1ab23c4d-12ab-1abc-a1bc-a12b12cdabcd HTTP/1.1
-Host: ssapi.shipstation.com
+GET /orders?storeID=385230&amp;importBatch=6aa5b480-e991-4e2a-957d-e48aec3979e8 HTTP/1.1
+Host: ssapi6.shipstation.com
 Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
 
+# More resource urls
+# orders?storeID=385230&amp;importBatch=45560603-7311-4ba1-abb8-63f77dd60ad5
+# orders?storeID=385230&amp;importBatch=c3a3528e-5b02-4b15-a604-d4996aa3de71
+# orders?storeID=385230&amp;importBatch=5d2120ad-11cd-48e3-88e7-308809bc65cc
+# orders?storeID=385230&amp;importBatch=40f63659-8b2e-4fc7-ad4e-628dfaadff83
+
+
+
+# Create / Update order
+###
+POST /orders/createorder HTTP/1.1
+Host: ssapi6.shipstation.com
+Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
 
 
 
