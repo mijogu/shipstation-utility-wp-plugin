@@ -20,6 +20,24 @@ add_action('rest_api_init', function () {
 });
 
 
+if ( class_exists('ACF') ) {
+    // note that the below code assumes there's an /acf-json/ directory
+    // in the same directory the code is located.
+
+
+    // Save ACF fields automatically
+    add_filter( 'acf/settings/save_json', function() {
+        return dirname(__FILE__) . '/acf-json';
+    });
+
+    // Load ACF fields automatically
+    add_filter( 'acf/settings/load_json', function( $paths ) {
+        $paths[] = dirname( __FILE__ ) . '/acf-json';
+        return $paths;
+    });
+}
+
+
 
 function ssu_receive_shipstation_webhook_payload($request) {
     $params = $request->get_params();
