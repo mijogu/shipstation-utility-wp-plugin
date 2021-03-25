@@ -32,9 +32,10 @@ content-type: application/json
 Authorization: Basic {{username}}:{{password}}
 
 {
-    "resource_url" : "https://ssapi6.shipstation.com/orders?storeID=385230&amp;importBatch=6aa5b480-e991-4e2a-957d-e48aec3979e8",
+    "resource_url" : "https://ssapi6.shipstation.com/orders?storeID=385230&importBatch=7804a3fa-cf0f-4bd1-88b5-baeb76740496",
     "resource_type" : "ORDER_NOTIFY"
 }
+
 
 ##########################################
 ### SHIPSTATION API
@@ -66,252 +67,88 @@ Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c00998
 POST /orders/createorder HTTP/1.1
 Host: ssapi6.shipstation.com
 Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
-
-
-
-
-##########################################
-### GET A USER
-##########################################
-    # By supplying a the USER ID at the end of this endpoint
-    # the data for a specific user will be returned.
-
-    # Sample endpoint: GET http://gatedsite1.visagedevsite.info/wp-json/wp/v2/users/100
-
-GET {{host}}/wp-json/wp/v2/users/{{userid}} HTTP/1.1
-content-type: application/json
-Authorization: Bearer {{token}}
-
-
-
-
-##########################################
-### CREATE A USER
-##########################################
-    # This will create a new User in WP.
-    # The following fields are required:
-        # email
-        # username -- this should be same as email
-        # password
-    # The following fields are optional:
-        # first_name
-        # last_name
-        # carvana_uid
-        # address_1
-        # address_2
-        # city
-        # state
-        # zip
-        # phone
-        # coupons
-
-    # To create a coupon with this call, supply the 'coupons' field with an array
-    # of parameters. 'coupon_code' must be set to "createcoupon". The following parameters
-    # are optional:
-        # coupon_status (by default this will be set to 'registered' unless specified)
-        # vehicle_id
-        # is_confirmed
-
-    # Sample endpoint: POST http://gatedsite1.visagedevsite.info/wp-json/wp/v2/users
-
-POST {{host}}/wp-json/wp/v2/users HTTP/1.1
-content-type: application/json
-Authorization: Bearer {{token}}
-
-{
-    //"username":     "{{email}}",
-    "username":     "signup@darngood.io",
-    "email":     "signup@darngood.io",
-    //"email":        "{{email}}",
-    "password":     "{{password}}",
-    "first_name" :  "{{first_name}}",
-    "last_name" :   "{{last_name}}",
-    "address_1" :   "{{address_1}}",
-    "address_2" :   "{{address_2}}",
-    "city":         "{{city}}",
-    "state":        "{{state}}",
-    "zip":          "{{zip}}",
-    "phone":        "{{phone}}",
-    "coupons": {
-        //"coupon_status": "cancelled",
-        //"is_confirmed": "yes",
-        //"vehicle_id": "12345"
-        //"coupon_code": "f606dae8fb461b6bcf53347c671af416-1573681686-3352"
-        "coupon_code": "createcoupon"
-    }
-}
-
-##########################################
-### UPDATE A USER
-##########################################
-    # This endpoint allows for the same parameters as above.
-    # However, you need to supply the USER ID in the url in order to
-    # update the correct user.
-
-    # Managing coupons is handled through the "coupons" field by
-    # supplying an array of the following optional fields:
-        # 'coupon_code'
-        # 'coupon_status'
-        # 'is_confirmed'
-        # 'vehicle_id'
-
-    # To create a coupon, "coupon_code" must be set to "createcoupon".
-    # To edit a coupon, "coupon_code" must be set to a valid coupon code.
-
-    # The following parameters are optional when creating or updating a coupon:
-        # coupon_status (when creating, this will be set to 'registered' unless specified)
-        # vehicle_id
-        # is_confirmed
-
-    # Use the "is_confirmed" field to track that a coupon is "confirmed" from
-    # Carvana's standpoint. This will allow us to retain the "confirmed" state regardless
-    # of subsequent status changes.
-
-    # Sample endpoint: POST http://gatedsite1.visagedevsite.info/wp-json/wp/v2/users/100
-
-POST {{host}}/wp-json/wp/v2/users/{{userid}} HTTP/1.1
-content-type: application/json
-Authorization: Bearer {{token}}
-
-{
-    "account_funds" : 500
-    //"custom_uid" : "mikecustomid"
-    //"carvana_uid" : "carvana",
-    //"bd_name" : "mike gunn",
-    //"bd_email" : "email@example.com",
-    //"hrd_name" : "dr mike gunn",
-    //"hrd_email" : "hremail@example.com"
-    //"first_name" :  "{{first_name}}",
-    //"last_name" :   "{{last_name}}",
-    //"address_1" :   "{{address_1}}",
-    //"address_2" :   "{{address_2}}",
-    //"city":         "{{city}}",
-    //"state":        "{{state}}",
-    //"zip":          "{{zip}}",
-    //"phone":        "{{phone}}",
-    //"coupons": {
-        //"coupon_status": "cancelled",
-        //"vehicle_id": "111111111",
-        //"is_confirmed": false,
-        //"coupon_code": "createcoupon"
-    //}
-}
-
-##########################################
-### DELETE A USER
-##########################################
-    # This endpoint may not be necessary, but was useful during testing.
-    # You must supply the USER ID in the URL, and the following
-    # parameters are required as well:
-        # force -- needs to be set to "true"
-        # reassign -- the ID of an administrator user - this is
-            # meant to reassign any Posts to another user (though that isn't
-            # actually relevant to us).
-
-    # Sample endpoint: DELETE http://gatedsite1.visagedevsite.info/wp-json/wp/v2/users/100
-
-DELETE {{host}}/wp-json/wp/v2/users/{{userid}} HTTP/1.1
-content-type: application/json
-Authorization: Bearer {{token}}
-
-{
-    "force" : "true",
-    "reassign" : "3339"
-}
-
-
-##########################################
-### GET USER BY CARVANA UID
-##########################################
-    # This endpoint will get the User by their Carvana UID.
-    # This endpoint can be used to get a User by any of their meta fields,
-    # by swapping out the 'filter[meta_key]' value for another meta key.
-
-    # Sample endpoint: GET http://gatedsite1.visagedevsite.info/wp-json/wp/v2/users?filter[meta_key]=carvana_uid&filter[meta_value]=C2654133-19A1-4AF8-ABEA-2D3920F65B28
-
-GET {{host}}/wp-json/wp/v2/users?filter[meta_key]=carvana_uid&filter[meta_value]={{carvanauid}}
-content-type: application/json
-Authorization: Bearer {{token}}
-
-
-##########################################
-### GET LIST OF PRODUCTS
-##########################################
-    # This endpoint will retrieve a list of all Products.
-
-GET {{host}}/wp-json/wc/v3/products
-content-type: application/json
-Authorization: Bearer {{token}}
-
-
-##########################################
-### GET A PRODUCT
-##########################################
-    # This endpoint will retrieve a single Product.
-
-GET {{host}}/wp-json/wc/v3/products/{{product_id}}
-content-type: application/json
-Authorization: Bearer {{token}}
-
-##########################################
-### UPDATE PRODUCT [PRICE ONLY]
-##########################################
-    # This endpoint will update a Product.
-    # Only the Price field is able to be updated, all other data is locked.
-
-POST {{host}}/wp-json/wc/v3/products/{{product_id}}
-content-type: application/json
-Authorization: Bearer {{token}}
-
-{
-    "regular_price" : "50"
-}
-
-
-
-
-
-###############################################################
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-# THE FOLLOWING ENDPOINTS ARE INCLUDED FOR TESTING PURPOSES ONLY.
-# THEY ARE CURRENTLY BEING USED FOR DEVELOPMENT PURPOSES ONLY AND
-# THE DATA SHOULD NOT BE EXPECTED TO BE ACCURATE / RELEVANT.
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-###############################################################
-
-
-
-
-
-##########################################
-### GET A WOOCOMMERCE COUPON
-##########################################
-
-GET {{host}}/wp-json/wc/v3/coupons/590
 Content-Type: application/json
-Authorization: Bearer {{token}}
 
-
-##########################################
-### GET A WOOCOMMERCE CUSTOMER
-##########################################
-
-GET {{host}}/wp-json/wc/v3/customers/{{userid}} HTTP/1.1
-content-type: application/json
-Authorization: Bearer {{token}}
-
-
-##########################################
-### LIST ALL API ENDPOINTS
-##########################################
-    # This is a default, non-authenticated endpoint of the WP REST API.
-    # It will return endpoints for all available API calls.
-    # It should not be needed, but was used for development only.
-
-
-
-GET {{host}}/wp-json HTTP/1.1
-content-type: application/json
-Authorization: Basic butility:4D2MxFcikpwL-KBg@y
+{
+  "orderNumber": "TEST-ORDER-API-DOCS",
+  "orderKey": "9953110555844680b7322bff7c739a3a",
+  "orderDate": "2021-02-23T08:46:27.0000000",
+  "orderStatus": "awaiting_shipment",
+  "customerId": 37701499,
+  "billTo": {
+    "name": "Mike Gunn",
+    "company": "US Govt",
+    "street1": "1600 Pennsylvania Ave",
+    "street2": "Oval Office",
+    "street3": null,
+    "city": "Washington",
+    "state": "DC",
+    "postalCode": "20500",
+    "country": "US",
+    "phone": "555-555-5555",
+    "residential": true
+  },
+  "shipTo": {
+    "name": "Emily Gunn",
+    "company": "US Govt",
+    "street1": "1600 Pennsylvania Ave",
+    "street2": "Oval Office",
+    "street3": null,
+    "city": "Washington",
+    "state": "DC",
+    "postalCode": "20500",
+    "country": "US",
+    "phone": "555-555-5555",
+    "residential": true
+  },
+  "items": [
+    {
+      "lineItemKey": "vd08-MSLbtx",
+      "sku": "ABC123",
+      "name": "Test item #1",
+      "imageUrl": null,
+      "weight": {
+        "value": 24,
+        "units": "ounces"
+      },
+      "quantity": 2,
+      "unitPrice": 99.99,
+      "taxAmount": 2.5,
+      "shippingAmount": 5,
+      "warehouseLocation": "Aisle 1, Bin 7",
+      "options": [
+        {
+          "name": "Size",
+          "value": "Large"
+        }
+      ],
+      "productId": 123456,
+      "fulfillmentSku": null,
+      "adjustment": false,
+      "upc": "32-65-98"
+    },
+    {
+      "lineItemKey": null,
+      "sku": "DISCOUNT CODE",
+      "name": "10% OFF",
+      "imageUrl": null,
+      "weight": {
+        "value": 0,
+        "units": "ounces"
+      },
+      "quantity": 1,
+      "unitPrice": -20.55,
+      "taxAmount": null,
+      "shippingAmount": null,
+      "warehouseLocation": null,
+      "options": [],
+      "productId": 123456,
+      "fulfillmentSku": "SKU-Discount",
+      "adjustment": true,
+      "upc": null
+    }
+  ],
+  "tagIds": [
+    53974
+  ]
+}
