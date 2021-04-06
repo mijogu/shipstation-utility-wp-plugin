@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Boundless Shipstation Utility
  * Description:
- * Version:           0.2
+ * Version:           0.3
  * Author:            DarnGood
  * Text Domain:       boundless-shipstation-utility
  * Domain Path:       /languages
@@ -220,14 +220,14 @@ function ssu_send_special_products_email($items, $order) {
     $store_email = $store['notificationEmail'];
     $store_name = $store['storeName'];
 
-    $order_id = $order['orderId'];
+    $order_num = $order['orderNumber'];
     $customer_address = $order['shipTo']['street1'] . ', ';
     $customer_address .= $order['shipTo']['street2'] ? $order['shipTo']['street2'] . ', ' : '';
     $customer_address .= $order['shipTo']['street3'] ? $order['shipTo']['street3'] . ', ' : '';
     $customer_address .= $order['shipTo']['city'] . ', ' . $order['shipTo']['state'] . ', ' . $order['shipTo']['postalCode'];
 
 
-    $message = "<p>Order # $order_id for special item(s) has been received at $store_name.</p>"
+    $message = "<p>Order #$order_num for special item(s) has been received at $store_name.</p>"
         . "<p>Here is the info:</p>"
         . "<p>Customer: " . $order['shipTo']['name'] . "<br>"
         . "Address: " . $customer_address . "<br>"
@@ -244,7 +244,7 @@ function ssu_send_special_products_email($items, $order) {
             . "</p>";
     }
 
-    $subject = "Special order #$order_id from $store_name";
+    $subject = "Special order #$order_num from $store_name";
     $to = $store_name .' Special Order Manager <'.$store_email .'>';
     $headers = array('Content-Type: text/html; charset=UTF-8');
     wp_mail( $to, $subject, $message, $headers );
