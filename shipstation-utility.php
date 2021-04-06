@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Boundless Shipstation Utility
  * Description:
- * Version:           0.1.1
+ * Version:           0.2
  * Author:            DarnGood
  * Text Domain:       boundless-shipstation-utility
  * Domain Path:       /languages
