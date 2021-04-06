@@ -80,8 +80,8 @@
         },
         {
             "key": "field_605a390e94224",
-            "label": "additional order details",
-            "name": "additional_order_details",
+            "label": "email content",
+            "name": "email_content",
             "type": "textarea",
             "instructions": "",
             "required": 0,
@@ -149,5 +149,5 @@
     ],
     "active": true,
     "description": "",
-    "modified": 1616608093
+    "modified": 1617721782
 }
