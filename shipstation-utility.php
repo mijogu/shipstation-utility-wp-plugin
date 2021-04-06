@@ -64,6 +64,14 @@ function ssu_process_new_order($params) {
     $url_components = parse_url($params['resource_url']);
     parse_str($url_components['query'], $url_params);
 
+    $batch_id = $url_params['importBatch'];
+
+    // confirm no Batch Post already exists for the batch ID
+    $batch_post = get_page_by_title($batch_id, ARRAY_A, 'post');
+    if (count($batch_post) > 0) {
+        return 'This batch ID has already been processed';
+    }
+
     // create post to save payload, with batch id as title
     $new_post = array(
         'post_title' => $url_params['importBatch'],
@@ -103,7 +111,8 @@ function ssu_get_store_data($store_id = null) {
     $stores = array(
         '385230' => array(
             'skuPattern' => 'DOD',
-            'notificationEmail' => 'mike@darngood.io'
+            'notificationEmail' => 'chris@visagecreative.com',
+            'storeName' => '[Need store name]'
         )
     );
 
@@ -133,7 +142,7 @@ function ssu_process_batch_of_orders($batch_id, $type = null) {
         }
 
         // confirm no Order Post already exists for this ID
-        $order_post = get_page_by_title($order['orderId']);
+        $order_post = get_page_by_title($order['orderId'], ARRAY_A, 'post');
         if (count($order_post) > 0) {
             continue;
         }
@@ -161,6 +170,7 @@ function ssu_parse_single_order_for_changes($post_id) {
     $order = json_decode(get_field('original_order_details', $post_id), true);
     $revised_order_items = array();
     $special_order_items = array();
+    $order_status = '';
 
     // look for SKUs that start with
     foreach ($order['items'] as $key => $item) {
@@ -179,7 +189,7 @@ function ssu_parse_single_order_for_changes($post_id) {
         $delete_response = ssu_delete_ss_order($order['orderId']);
         // save delete response
         update_field('updated_order_details', $delete_response, $post_id);
-        return 'order deleted';
+        $order_status = 'order deleted';
     } elseif (count($order['items']) > count($revised_order_items)) {
         // replace items for original order
         $order['items'] = $revised_order_items;
@@ -187,35 +197,60 @@ function ssu_parse_single_order_for_changes($post_id) {
         $update_response = ssu_update_ss_order($order);
         // save updated order acf
         update_field('updated_order_details', $update_response, $post_id);
-        return 'order updated';
+
+        $order_status = 'order updated';
     }
 
     // check if there were special items that need to be emailed
     if (!empty($special_order_items)) {
-        ssu_send_special_products_email($special_order_items, $order);
+        $email_content = ssu_send_special_products_email($special_order_items, $order);
+        update_field('email_content', $email_content, $post_id);
+
+        $order_status .= ' and email sent';
     }
+
+    return $order_status;
 }
 
-function ssu_send_special_products_email($items, $original_order) {
+function ssu_send_special_products_email($items, $order) {
     // TODO get the appropriate email address based on StoreID
-    $toEmail = 'mike@darngood.io';
-    $message = '';
+    $store_id = $order['advancedOptions']['storeId'];
 
+    $store = ssu_get_store_data($store_id);
+    $store_email = $store['notificationEmail'];
+    $store_name = $store['storeName'];
+
+    $order_id = $order['orderId'];
+    $customer_address = $order['shipTo']['street1'] . ', ';
+    $customer_address .= $order['shipTo']['street2'] ? $order['shipTo']['street2'] . ', ' : '';
+    $customer_address .= $order['shipTo']['street3'] ? $order['shipTo']['street3'] . ', ' : '';
+    $customer_address .= $order['shipTo']['city'] . ', ' . $order['shipTo']['state'] . ', ' . $order['shipTo']['postalCode'];
+
+
+    $message = "<p>Order # $order_id for special item(s) has been received at $store_name.</p>"
+        . "<p>Here is the info:</p>"
+        . "<p>Customer: " . $order['shipTo']['name'] . "<br>"
+        . "Address: " . $customer_address . "<br>"
+        . "Phone: " . $order['shipTo']['phone']. "</p>"
+        . "<p>The order includes the following item(s):</p>";
+
+    //
     // loop thru the items
     foreach ($items as $item) {
         $message .= "<p>"
-            . "OrderItemID: " . $item['orderItemId'] . "<br>"
             . "Item Name: " . $item['name'] . "<br>"
             . "Item SKU: " . $item['sku'] . "<br>"
             . "Quantity: " . $item['quantity'] . "<br>"
             . "</p>";
     }
 
-    $subject = 'Boundless Utility: Special Products Ordered';
+    $subject = "Special order #$order_id from $store_name";
+    $to = $store_name .' Special Order Manager <'.$store_email .'>';
     $headers = array('Content-Type: text/html; charset=UTF-8');
-    wp_mail( $toEmail, $subject, $message, $headers );
-}
+    wp_mail( $to, $subject, $message, $headers );
 
+    return $message;
+}
 
 
 // Get Batch Orders (from payload's resource_url)
