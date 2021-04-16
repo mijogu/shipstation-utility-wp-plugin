@@ -50,7 +50,7 @@ Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c00998
 
 # Test resource url
 ###
-GET /orders?storeID=385230&amp;importBatch=6aa5b480-e991-4e2a-957d-e48aec3979e8 HTTP/1.1
+GET /orders?storeID=385230&amp;importBatch=7804a3fa-cf0f-4bd1-88b5-baeb76740496 HTTP/1.1
 Host: ssapi6.shipstation.com
 Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
 
@@ -59,7 +59,6 @@ Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c00998
 # orders?storeID=385230&amp;importBatch=c3a3528e-5b02-4b15-a604-d4996aa3de71
 # orders?storeID=385230&amp;importBatch=5d2120ad-11cd-48e3-88e7-308809bc65cc
 # orders?storeID=385230&amp;importBatch=40f63659-8b2e-4fc7-ad4e-628dfaadff83
-
 
 
 # Create / Update order
