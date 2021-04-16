@@ -1,6 +1,6 @@
 {
     "key": "group_605218bb10b87",
-    "title": "Shipstation",
+    "title": "Shipstation Posts",
     "fields": [
         {
             "key": "field_605218c3f919a",
@@ -149,5 +149,5 @@
     ],
     "active": true,
     "description": "",
-    "modified": 1617721782
+    "modified": 1618587006
 }
