@@ -9,7 +9,6 @@
  */
 
 defined('SSU_SS_BASEURL') || define('SSU_SS_BASEURL', 'https://ssapi6.shipstation.com');
-defined('SSU_SKU_SEARCHTERM') || define('SSU_SKU_SEARCHTERM', 'DOD');
 
 
 if ( class_exists('ACF') ) {
@@ -121,14 +120,15 @@ add_action( 'ssu_handle_new_batch_of_orders', 'ssu_process_batch_of_orders', 10,
 
 // get store data
 function ssu_get_store_data($store_id = null) {
-    $stores = array(
-        '385230' => array(
-            'skuPattern' => 'DOD',
-            'notificationEmail' => 'chris@visagecreative.com',
-            'storeName' => '[Need store name]'
-        )
-    );
+    $stores_data = get_field('shipstation_stores', 'option');
 
+    // Set keys to store IDs
+    $stores = array_reduce($stores_data, function ($result, $store) {
+        $result[$store['store_id']] = $store;
+        return $result;
+    }, array());
+
+    // only return specific store data if requested
     if ($store_id != null && isset($stores[$store_id])) {
         return $stores[$store_id];
     } else {
@@ -144,10 +144,11 @@ function ssu_process_batch_of_orders($batch_id, $type = null) {
     // get orders from batch post's json
     $orderDetails = json_decode($orders, true);
 
+    // get all store data
+    $stores = ssu_get_store_data();
+
     // loop thru all orders
     foreach ($orderDetails['orders'] as $order) {
-        // get all store data
-        $stores = ssu_get_store_data();
 
         // confirm StoreID is one we care about
         if (!isset($stores[$order['advancedOptions']['storeId']])) {
@@ -173,13 +174,18 @@ function ssu_process_batch_of_orders($batch_id, $type = null) {
         update_field('original_order_details', json_encode($order), $post_id);
 
         // parse order data for any changes needed
-        $response = ssu_parse_single_order_for_changes($post_id);
+        $response = ssu_parse_single_order_for_changes($post_id, $order['advancedOptions']['storeId']);
     }
 }
 
 // Parses a single order for any needed changes
-function ssu_parse_single_order_for_changes($post_id) {
-    $sku_match = SSU_SKU_SEARCHTERM;
+function ssu_parse_single_order_for_changes($post_id, $store_id) {
+    // TODO get SKU pattern(s)
+    $store = ssu_get_store_data($store_id);
+
+    $sku_patterns = $store['sku_patterns'];
+    $sku_patterns = explode('|', $sku_patterns);
+
     $order = json_decode(get_field('original_order_details', $post_id), true);
     $revised_order_items = array();
     $special_order_items = array();
@@ -187,8 +193,16 @@ function ssu_parse_single_order_for_changes($post_id) {
 
     // look for SKUs that start with
     foreach ($order['items'] as $key => $item) {
-        // check that SKU does NOT match the search term(s)
-        if (strpos($item['sku'], $sku_match) !== false ) {
+        // loop thru SKU patterns to find matches
+        $is_special_item = false;
+        foreach($sku_patterns as $pattern) {
+            if (strpos($item['sku'], $pattern) !== false ) {
+                $is_special_item = true;
+                break;
+            }
+        }
+
+        if ($is_special_item) {
             $special_order_items[] = $item;
         } else {
             $revised_order_items[] = $item;
@@ -230,8 +244,8 @@ function ssu_send_special_products_email($items, $order) {
     $store_id = $order['advancedOptions']['storeId'];
 
     $store = ssu_get_store_data($store_id);
-    $store_email = $store['notificationEmail'];
-    $store_name = $store['storeName'];
+    $store_email = $store['notification_email'];
+    $store_name = $store['store_name'];
 
     $order_num = $order['orderNumber'];
     $customer_address = $order['shipTo']['street1'] . ', ';
