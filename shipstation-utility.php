@@ -29,6 +29,19 @@ if ( class_exists('ACF') ) {
 }
 
 
+// Add Options page
+if( function_exists('acf_add_options_page') ) {
+
+	acf_add_options_page(array(
+		'page_title' 	=> 'Shipstation Utility Settings',
+		'menu_title'	=> 'Shipstation Utility Settings',
+		'menu_slug' 	=> 'shipstation-utility-settings',
+		'capability'	=> 'edit_posts',
+		'redirect'		=> false
+	));
+}
+
+
 add_action('rest_api_init', function () {
     register_rest_route( 'shipstation-utility/v1', 'neworder',array(
             'methods'  => 'POST',
