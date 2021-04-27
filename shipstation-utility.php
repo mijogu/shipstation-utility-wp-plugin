@@ -265,8 +265,11 @@ function ssu_send_special_products_email($items, $order) {
         $message .= "<p>"
             . "Item Name: " . $item['name'] . "<br>"
             . "Item SKU: " . $item['sku'] . "<br>"
-            . "Quantity: " . $item['quantity'] . "<br>"
-            . "</p>";
+            . "Quantity: " . $item['quantity'] . "<br>";
+        foreach ($item['options'] as $option) {
+            $message .= $option['name'] . ": " . $option['value'] . "<br>";
+        }
+        $message .= "</p>";
     }
 
     $subject = "Special order #$order_num from $store_name";
