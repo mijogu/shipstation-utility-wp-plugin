@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Boundless Shipstation Utility
  * Description:
- * Version:           0.4
+ * Version:           1.0
  * Author:            DarnGood
  * Text Domain:       boundless-shipstation-utility
  * Domain Path:       /languages
@@ -180,7 +180,6 @@ function ssu_process_batch_of_orders($batch_id, $type = null) {
 
 // Parses a single order for any needed changes
 function ssu_parse_single_order_for_changes($post_id, $store_id) {
-    // TODO get SKU pattern(s)
     $store = ssu_get_store_data($store_id);
 
     $sku_patterns = $store['sku_patterns'];
@@ -240,7 +239,6 @@ function ssu_parse_single_order_for_changes($post_id, $store_id) {
 }
 
 function ssu_send_special_products_email($items, $order) {
-    // TODO get the appropriate email address based on StoreID
     $store_id = $order['advancedOptions']['storeId'];
 
     $store = ssu_get_store_data($store_id);
