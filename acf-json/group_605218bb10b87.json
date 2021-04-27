@@ -7,7 +7,7 @@
             "label": "new orders payload",
             "name": "new_orders_payload",
             "type": "textarea",
-            "instructions": "",
+            "instructions": "This is the payload that we first receive from the Shipstation Webhook.",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -26,7 +26,7 @@
             "label": "new orders response",
             "name": "new_orders_response",
             "type": "textarea",
-            "instructions": "",
+            "instructions": "This is a list of orders included in a batch. This is the response we receive from Shipstation once we query the response_url. (The response_url was included in the initial payload.)",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -45,7 +45,7 @@
             "label": "original order details",
             "name": "original_order_details",
             "type": "textarea",
-            "instructions": "",
+            "instructions": "This is an original single order. It was pulled out from a batch of orders. (The batch post ID is referenced below as batch_post.)",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -64,7 +64,7 @@
             "label": "updated order details",
             "name": "updated_order_details",
             "type": "textarea",
-            "instructions": "",
+            "instructions": "If the original order needed to be changed, this is where we save the response from Shipstation after we made the update request.",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -83,7 +83,7 @@
             "label": "email content",
             "name": "email_content",
             "type": "textarea",
-            "instructions": "",
+            "instructions": "If the order included special products, this is the email content that was sent out to the proper notification email.",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -102,7 +102,7 @@
             "label": "batch post",
             "name": "batch_post",
             "type": "text",
-            "instructions": "",
+            "instructions": "This is a reference to the batch post that this order came from.",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -149,5 +149,5 @@
     ],
     "active": true,
     "description": "",
-    "modified": 1618587006
+    "modified": 1618847494
 }
