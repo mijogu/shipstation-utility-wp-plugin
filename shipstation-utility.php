@@ -42,7 +42,7 @@ if( function_exists('acf_add_options_page') ) {
 
 
 add_action('rest_api_init', function () {
-    register_rest_route( 'shipstation-utility/v1', 'neworder',array(
+    register_rest_route( 'shipstation-utility/v1', 'neworder', array(
             'methods'  => 'POST',
             'callback' => 'ssu_receive_shipstation_webhook_payload'
     ));
@@ -77,6 +77,8 @@ function ssu_process_new_order($params) {
     parse_str($url_components['query'], $url_params);
 
     $batch_id = $url_params['importBatch'];
+    $store_id = $url_params['storeID'];
+    $store_data = ssu_get_store_data($store_id);
 
     // confirm no Batch Post already exists for the batch ID
     $batch_post = get_page_by_title($batch_id, ARRAY_A, 'post');
@@ -93,12 +95,12 @@ function ssu_process_new_order($params) {
     $post_id = wp_insert_post($new_post);
 
     // Use the payload to GET order(s) data
-    $orderData = ssu_get_batch_details($params['resource_url']);
+    $orderData = ssu_get_batch_details($params['resource_url'], $store_data);
 
     // save acf field data
     update_field('new_orders_payload', json_encode($params), $post_id);
-    // update_field('new_orders_response', json_encode($orderData), $post_id);
     update_field('new_orders_response', $orderData, $post_id);
+    update_field('store_id', $store_id, $post_id);
 
 
     // check for Action Scheduler plugin
@@ -116,6 +118,50 @@ function ssu_process_new_order($params) {
 
 // Define action to be called with 'wp_schedule_single_event'
 add_action( 'ssu_handle_new_batch_of_orders', 'ssu_process_batch_of_orders', 10, 2);
+
+// Processes a batch of orders received from shipstation resource_url
+function ssu_process_batch_of_orders($batch_id, $type = null) {
+    $orders = get_field('new_orders_response', $batch_id);
+
+    // get orders from batch post's json
+    $orderDetails = json_decode($orders, true);
+
+    // get all store data
+    $stores = ssu_get_store_data();
+
+    // loop thru all orders
+    foreach ($orderDetails['orders'] as $order) {
+        // get store ID from order
+        $store_id = $order['advancedOptions']['storeId'];
+
+        // confirm StoreID is one we care about
+        if (!isset($stores[$store_id])) {
+            continue;
+        }
+
+        // confirm no Order Post already exists for this ID
+        $order_post = get_page_by_title($order['orderId'], ARRAY_A, 'post');
+        if (count($order_post) > 0) {
+            continue;
+        }
+
+        // create new post
+        $new_post = array(
+            'post_title' => $order['orderId'],
+            'post_content' => json_encode($order),
+            'post_type' => 'post',
+        );
+        $post_id = wp_insert_post($new_post);
+
+        // save initial acf data
+        update_field('batch_post', $batch_id, $post_id);
+        update_field('store_id', $store_id, $post_id);
+        update_field('original_order_details', json_encode($order), $post_id);
+
+        // parse order data for any changes needed
+        $response = ssu_parse_single_order_for_changes($post_id, $store_id);
+    }
+}
 
 
 // get store data
@@ -136,55 +182,15 @@ function ssu_get_store_data($store_id = null) {
     }
 }
 
-
-// Processes a batch of orders received from shipstation resource_url
-function ssu_process_batch_of_orders($batch_id, $type = null) {
-    $orders = get_field('new_orders_response', $batch_id);
-
-    // get orders from batch post's json
-    $orderDetails = json_decode($orders, true);
-
-    // get all store data
-    $stores = ssu_get_store_data();
-
-    // loop thru all orders
-    foreach ($orderDetails['orders'] as $order) {
-
-        // confirm StoreID is one we care about
-        if (!isset($stores[$order['advancedOptions']['storeId']])) {
-            continue;
-        }
-
-        // confirm no Order Post already exists for this ID
-        $order_post = get_page_by_title($order['orderId'], ARRAY_A, 'post');
-        if (count($order_post) > 0) {
-            continue;
-        }
-
-        // create new post
-        $new_post = array(
-            'post_title' => $order['orderId'],
-            'post_content' => json_encode($order),
-            'post_type' => 'post',
-        );
-        $post_id = wp_insert_post($new_post);
-
-        // save initial acf data
-        update_field('batch_post', $batch_id, $post_id);
-        update_field('original_order_details', json_encode($order), $post_id);
-
-        // parse order data for any changes needed
-        $response = ssu_parse_single_order_for_changes($post_id, $order['advancedOptions']['storeId']);
-    }
-}
-
 // Parses a single order for any needed changes
 function ssu_parse_single_order_for_changes($post_id, $store_id) {
     $store = ssu_get_store_data($store_id);
 
+    // get SKU patterns to look for
     $sku_patterns = $store['sku_patterns'];
     $sku_patterns = explode('|', $sku_patterns);
 
+    // decode JSON data & prep arrays
     $order = json_decode(get_field('original_order_details', $post_id), true);
     $revised_order_items = array();
     $special_order_items = array();
@@ -212,7 +218,7 @@ function ssu_parse_single_order_for_changes($post_id, $store_id) {
     // if there are zero revised items (only special products), delete the SS order
     if (empty($revised_order_items)) {
         // send delete request
-        $delete_response = ssu_delete_ss_order($order['orderId']);
+        $delete_response = ssu_delete_ss_order($order['orderId'], $store);
         // save delete response
         update_field('updated_order_details', $delete_response, $post_id);
         $order_status = 'order deleted';
@@ -220,10 +226,9 @@ function ssu_parse_single_order_for_changes($post_id, $store_id) {
         // replace items for original order
         $order['items'] = $revised_order_items;
         // update original order at ss
-        $update_response = ssu_update_ss_order($order);
+        $update_response = ssu_update_ss_order($order, $store);
         // save updated order acf
         update_field('updated_order_details', $update_response, $post_id);
-
         $order_status = 'order updated';
     }
 
@@ -231,7 +236,6 @@ function ssu_parse_single_order_for_changes($post_id, $store_id) {
     if (!empty($special_order_items)) {
         $email_content = ssu_send_special_products_email($special_order_items, $order);
         update_field('email_content', $email_content, $post_id);
-
         $order_status .= ' and email sent';
     }
 
@@ -259,7 +263,6 @@ function ssu_send_special_products_email($items, $order) {
         . "Phone: " . $order['shipTo']['phone']. "</p>"
         . "<p>The order includes the following item(s):</p>";
 
-    //
     // loop thru the items
     foreach ($items as $item) {
         $message .= "<p>"
@@ -283,12 +286,12 @@ function ssu_send_special_products_email($items, $order) {
 
 // Get Batch Orders (from payload's resource_url)
 // https://www.shipstation.com/docs/api/orders/get-order/
-function ssu_get_batch_details($url = null) {
+function ssu_get_batch_details($url, $store_data) {
     $args = array(
         'httpversion' => '1.1',
         'headers' => array(
             'Content-Type' => 'application/json',
-            'Authorization' => 'Basic ' . base64_encode( '9643ce8bd18945da93a3769a85c2b2b5' . ':' . '5fb3c382e9cb4dff9dc0c009987cc0ca' )
+            'Authorization' => 'Basic ' . base64_encode( $store_data['api_key'] . ':' . $store_data['api_secret'] )
         )
     );
     $response = wp_remote_get(htmlentities($url), $args );
@@ -300,7 +303,7 @@ function ssu_get_batch_details($url = null) {
 
 // Create or Update a Shipstation Order
 // https://www.shipstation.com/docs/api/orders/create-update-order/
-function ssu_update_ss_order($order_data) {
+function ssu_update_ss_order($order_data, $store_data) {
     $url = SSU_SS_BASEURL . '/orders/createorder';
 
     // update original ss order
@@ -308,7 +311,7 @@ function ssu_update_ss_order($order_data) {
         'httpversion' => '1.1',
         'headers' => array(
             'Content-Type' => 'application/json',
-            'Authorization' => 'Basic ' . base64_encode( '9643ce8bd18945da93a3769a85c2b2b5' . ':' . '5fb3c382e9cb4dff9dc0c009987cc0ca' )
+            'Authorization' => 'Basic ' . base64_encode( $store_data['api_key'] . ':' . $store_data['api_secret'] )
         ),
         'body' => wp_json_encode($order_data)
     );
@@ -320,7 +323,7 @@ function ssu_update_ss_order($order_data) {
 
 // Delete a Shipstation Order
 // https://www.shipstation.com/docs/api/orders/create-update-order/
-function ssu_delete_ss_order($order_id) {
+function ssu_delete_ss_order($order_id, $store_data) {
     $url = SSU_SS_BASEURL . '/orders/' . $order_id;
 
     // update original ss order
@@ -329,9 +332,8 @@ function ssu_delete_ss_order($order_id) {
         'httpversion' => '1.1',
         'headers' => array(
             'Content-Type' => 'application/json',
-            'Authorization' => 'Basic ' . base64_encode( '9643ce8bd18945da93a3769a85c2b2b5' . ':' . '5fb3c382e9cb4dff9dc0c009987cc0ca' )
+            'Authorization' => 'Basic ' . base64_encode( $store_data['api_key'] . ':' . $store_data['api_secret'] )
         ),
-        'body' => wp_json_encode($order_data)
     );
     $response = wp_remote_request($url, $args);
     $body = wp_remote_retrieve_body($response);
