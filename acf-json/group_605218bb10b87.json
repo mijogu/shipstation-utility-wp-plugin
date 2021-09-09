@@ -115,6 +115,25 @@
             "prepend": "",
             "append": "",
             "maxlength": ""
+        },
+        {
+            "key": "field_613a3dbb8fdff",
+            "label": "store ID",
+            "name": "store_id",
+            "type": "text",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": "",
+            "maxlength": ""
         }
     ],
     "location": [
@@ -149,5 +168,5 @@
     ],
     "active": true,
     "description": "",
-    "modified": 1618847494
+    "modified": 1631206893
 }
