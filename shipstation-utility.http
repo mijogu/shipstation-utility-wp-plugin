@@ -15,6 +15,16 @@
 @email = mike2@darngood.io
 
 
+# Shipstation Variables
+@storeId = 385230
+@apiKey = 9643ce8bd18945da93a3769a85c2b2b5
+@apiSecret = 5fb3c382e9cb4dff9dc0c009987cc0ca
+
+# @storeId = 174074
+# @apiKey = 06b8323c65004bcf8a99ccd390ca2d7a
+# @apiSecret = c77601c63a8c4e0882a8e85a267b8ea9
+
+
 
 ##########################################
 ### UTILITY SITE API
@@ -45,14 +55,15 @@ Authorization: Basic {{username}}:{{password}}
 ###
 GET /orders/ HTTP/1.1
 Host: ssapi6.shipstation.com
-Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
+Authorization: Basic {{apiKey}}:{{apiSecret}}
+
 
 
 # Test resource url
 ###
-GET /orders?storeID=385230&amp;importBatch=7804a3fa-cf0f-4bd1-88b5-baeb76740496 HTTP/1.1
+GET /orders?storeID={{storeId}}&amp;importBatch=7804a3fa-cf0f-4bd1-88b5-baeb76740496 HTTP/1.1
 Host: ssapi6.shipstation.com
-Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
+Authorization: Basic {{apiKey}}:{{apiSecret}}
 
 # More resource urls
 # orders?storeID=385230&amp;importBatch=45560603-7311-4ba1-abb8-63f77dd60ad5
@@ -65,7 +76,7 @@ Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c00998
 ###
 POST /orders/createorder HTTP/1.1
 Host: ssapi6.shipstation.com
-Authorization: Basic 9643ce8bd18945da93a3769a85c2b2b5:5fb3c382e9cb4dff9dc0c009987cc0ca
+Authorization: Basic {{apiKey}}:{{apiSecret}}
 Content-Type: application/json
 
 {
