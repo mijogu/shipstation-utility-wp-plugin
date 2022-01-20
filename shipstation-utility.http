@@ -42,9 +42,13 @@ content-type: application/json
 Authorization: Basic {{username}}:{{password}}
 
 {
-    "resource_url" : "https://ssapi6.shipstation.com/orders?storeID=385230&importBatch=7804a3fa-cf0f-4bd1-88b5-baeb76740496",
+    "resource_url" : "https://ssapi6.shipstation.com/orders?storeID=414969&importBatch=3ab5897b-d0b8-4f25-8dc4-7a95c42460d9",
     "resource_type" : "ORDER_NOTIFY"
 }
+
+# https://ssapi6.shipstation.com/orders?storeID=414969&importBatch=5b26b55c-adf9-4a7d-95fe-154ce0b9846a
+# https://ssapi6.shipstation.com/orders?storeID=385230&importBatch=d4ac1a55-99c7-4248-9cc9-0c031cb26bb6
+# https://ssapi6.shipstation.com/orders?storeID=414969&importBatch=3ab5897b-d0b8-4f25-8dc4-7a95c42460d9
 
 
 ##########################################

@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Boundless Shipstation Utility
  * Description:
- * Version:           1.1
+ * Version:           1.2
  * Author:            DarnGood
  * Text Domain:       boundless-shipstation-utility
  * Domain Path:       /languages
@@ -81,7 +81,9 @@ function ssu_process_new_order($params) {
     $store_data = ssu_get_store_data($store_id);
 
     // confirm no Batch Post already exists for the batch ID
-    $batch_post = get_page_by_title($batch_id, ARRAY_A, 'post');
+    global $wpdb;
+    $batch_post = $wpdb->get_results( $wpdb->prepare("SELECT * FROM $wpdb->posts WHERE  post_status = 'publish' AND post_title LIKE '%s'", '%'. $wpdb->esc_like( $batch_id ) .'%') );
+
     if (count($batch_post) > 0) {
         return 'This batch ID has already been processed';
     }
@@ -104,12 +106,13 @@ function ssu_process_new_order($params) {
 
 
     // check for Action Scheduler plugin
-    if (function_exists( 'action_scheduler_register_3_dot_1_dot_6')) {
+    if (function_exists( 'as_enqueue_async_action')) {
         // schedule task with action scheduler
         as_enqueue_async_action('ssu_handle_new_batch_of_orders', array($post_id, "action-scheduler-task"));
     } else {
         // schedule task with wp_cron jobs
-        wp_schedule_single_event( time(), 'ssu_handle_new_batch_of_orders', array($post_id, "wp-cron-task") );
+        // TODO fix this, doesn't seem to be working
+        wp_schedule_single_event( time() + 60, 'ssu_handle_new_batch_of_orders', array($post_id, "wp-cron-task") );
     }
 
     return $post_id;
@@ -140,7 +143,9 @@ function ssu_process_batch_of_orders($batch_id, $type = null) {
         }
 
         // confirm no Order Post already exists for this ID
-        $order_post = get_page_by_title($order['orderId'], ARRAY_A, 'post');
+        global $wpdb;
+        $order_post = $wpdb->get_results( $wpdb->prepare("SELECT * FROM $wpdb->posts WHERE  post_status = 'publish' AND post_title LIKE '%s'", '%'. $wpdb->esc_like( $order['orderId'] ) .'%') );
+
         if (count($order_post) > 0) {
             continue;
         }
