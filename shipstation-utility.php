@@ -344,3 +344,10 @@ function ssu_delete_ss_order($order_id, $store_data) {
     $body = wp_remote_retrieve_body($response);
     return $body;
 }
+
+    // Enqueue custom admin js
+    add_action('acf/input/admin_enqueue_scripts', 'ssu_acf_admin_enqueue_scripts');
+    function ssu_acf_admin_enqueue_scripts() {
+        wp_enqueue_style('shipstation-utility-css', plugin_dir_url( __FILE__ ) . '/css/shipstation-utility.css', array(), '1.0.0' );
+        wp_enqueue_script('shipstation-utility-js', plugin_dir_url( __FILE__ ) . '/js/shipstation-utility.js', array('jquery'), '1.0.0' );
+    }

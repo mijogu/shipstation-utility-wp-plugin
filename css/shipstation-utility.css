@@ -1,0 +1,17 @@
+.test-connection-wrapper {
+    display: none;
+    position: relative;
+    margin-top: 15px;
+}
+
+.test-connection-close {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+}
+
+.test-connection-response {
+
+}
+
