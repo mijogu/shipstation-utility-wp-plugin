@@ -22,9 +22,28 @@
             "button_label": "",
             "sub_fields": [
                 {
-                    "key": "field_6079adc10b006",
-                    "label": "Store Name",
-                    "name": "store_name",
+                    "key": "field_613a3a564b33b",
+                    "label": "API Key",
+                    "name": "api_key",
+                    "type": "text",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "maxlength": ""
+                },
+                {
+                    "key": "field_613a3a604b33c",
+                    "label": "API Secret",
+                    "name": "api_secret",
                     "type": "text",
                     "instructions": "",
                     "required": 0,
@@ -60,28 +79,43 @@
                     "maxlength": ""
                 },
                 {
-                    "key": "field_613a3a564b33b",
-                    "label": "API Key",
-                    "name": "api_key",
-                    "type": "text",
-                    "instructions": "",
+                    "key": "field_62598b1bd412a",
+                    "label": "Test connection",
+                    "name": "test_connection",
+                    "type": "acfe_button",
+                    "instructions": "Use this to test the API credentials supplied above. API Key and Secret are required. If Store ID is supplied, only that Store's name will be returned. If not, all available Stores' names will be returned.",
                     "required": 0,
-                    "conditional_logic": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_613a3a564b33b",
+                                "operator": "!=empty"
+                            }
+                        ],
+                        [
+                            {
+                                "field": "field_613a3a604b33c",
+                                "operator": "!=empty"
+                            }
+                        ]
+                    ],
                     "wrapper": {
                         "width": "",
                         "class": "",
                         "id": ""
                     },
-                    "default_value": "",
-                    "placeholder": "",
-                    "prepend": "",
-                    "append": "",
-                    "maxlength": ""
+                    "button_value": "Test connection",
+                    "button_type": "button",
+                    "button_class": "button button-secondary",
+                    "button_id": "",
+                    "button_before": "",
+                    "button_after": "<div class=\"test-connection-wrapper\">\r\n    <button class=\"test-connection-close\">close<\/button>\r\n    <div class=\"test-connection-response\"><\/div>\r\n<\/div>",
+                    "button_ajax": 1
                 },
                 {
-                    "key": "field_613a3a604b33c",
-                    "label": "API Secret",
-                    "name": "api_secret",
+                    "key": "field_6079adc10b006",
+                    "label": "Store Name",
+                    "name": "store_name",
                     "type": "text",
                     "instructions": "",
                     "required": 0,
@@ -155,5 +189,13 @@
     "hide_on_screen": "",
     "active": true,
     "description": "",
-    "modified": 1631206417
+    "show_in_rest": 0,
+    "acfe_display_title": "",
+    "acfe_autosync": [
+        "json"
+    ],
+    "acfe_form": 0,
+    "acfe_meta": "",
+    "acfe_note": "",
+    "modified": 1650484368
 }
