@@ -345,6 +345,78 @@ function ssu_delete_ss_order($order_id, $store_data) {
     return $body;
 }
 
+// Get Store data from Shipstation
+function ssu_get_ss_stores($apiKey, $apiSecret) {
+    $url = SSU_SS_BASEURL . '/stores/';
+
+    // update original ss order
+    $args = array(
+        'httpversion' => '1.1',
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Basic ' . base64_encode( $apiKey . ':' . $apiSecret )
+        ),
+    );
+    $response = wp_remote_request($url, $args);
+    $body = wp_remote_retrieve_body($response);
+    return $body;
+}
+
+// Add "test connection" feature
+add_action('acfe/fields/button/name=test_connection', 'ssu_test_connection', 10, 2);
+function ssu_test_connection($field, $post_id){
+    // retrieve field input value 'my_field'
+    $apiKey = $_POST['apikey'];
+    $apiSecret = $_POST['apisecret'];
+    $storeID = isset($_POST['storeid']) ? $_POST['storeid'] : null;
+
+    $stores_filtered = array();
+
+    // ensure apikey and apisecret are provided
+    // else send error reponse
+    if ($apiKey == '') {
+        wp_send_json_error(array('Message'=> 'API Key missing.'));
+    }
+    if ($apiSecret == '') {
+        wp_send_json_error(array('Message'=> 'API Secret missing.'));
+    }
+
+    $api_response = ssu_get_ss_stores($apiKey, $apiSecret);
+
+    if ($api_response == '') {
+        wp_send_json_error(array('Message'=> 'No response. Check your credentials.'));
+    }
+
+    $stores = json_decode($api_response, true);
+
+    if (!is_array($stores) && isset($stores['Message'])) {
+        wp_send_json_error($stores);
+    }
+
+    // filter stores to just IDs and names
+    foreach($stores as $store) {
+        // if storeID is provided, return only that one
+        // else return all stores
+        if (
+            $storeID == null ||
+            $storeID == $store['storeId']
+        ) {
+            $stores_filtered[] = array(
+                'id' => $store['storeId'],
+                'name' => $store['storeName']
+            );
+        }
+    }
+
+    // return error if specific store not found
+    if ($storeID != null && count($stores_filtered) == 0) {
+        wp_send_json_error(array('Message'=> "Could not find Store with ID $storeID."));
+    }
+
+    // send json success message
+    wp_send_json_success($stores_filtered);
+}
+
     // Enqueue custom admin js
     add_action('acf/input/admin_enqueue_scripts', 'ssu_acf_admin_enqueue_scripts');
     function ssu_acf_admin_enqueue_scripts() {
