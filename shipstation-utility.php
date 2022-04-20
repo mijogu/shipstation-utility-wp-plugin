@@ -1,12 +1,54 @@
 <?php
 /**
  * Plugin Name:       Boundless Shipstation Utility
- * Description:
+ * Description:       Plugin requires ACF (or Pro version) as well as ACF Extended (or Pro version).
  * Version:           1.3
  * Author:            DarnGood
  * Text Domain:       boundless-shipstation-utility
  * Domain Path:       /languages
  */
+
+add_action( 'admin_init', 'ssu_check_for_required_plugins' );
+function ssu_check_for_required_plugins() {
+    if (is_admin() && current_user_can('activate_plugins')) {
+        $deactivate = false;
+
+        // check for ACF plugin
+        if (
+            !is_plugin_active('advanced-custom-fields/acf.php')
+            && !is_plugin_active('advanced-custom-fields-pro/acf.php')
+        ) {
+            add_action( 'admin_notices', 'ssu_require_acf' );
+            $deactivate = true;
+        }
+
+        // check for ACF Extended plugin
+        if (
+            !is_plugin_active('acf-extended/acf-extended.php')
+            && !is_plugin_active('acf-extended-pro/acf-extended-pro.php')
+        ) {
+            add_action( 'admin_notices', 'ssu_require_acf_extended' );
+            $deactivate = true;
+        }
+
+        // check if plugin should be deactivated
+        if ($deactivate) {
+            deactivate_plugins( plugin_basename( __FILE__ ) );
+
+            if ( isset( $_GET['activate'] ) ) {
+                unset( $_GET['activate'] );
+            }
+        }
+    }
+}
+
+function ssu_require_acf() {
+    ?><div class="error"><p>This plugin requires the ACF or ACF Pro plugin.</p></div><?php
+}
+
+function ssu_require_acf_extended() {
+    ?><div class="error"><p>This plugin requires the ACF Extended or ACF Extended Pro plugin.</p></div><?php
+}
 
 defined('SSU_SS_BASEURL') || define('SSU_SS_BASEURL', 'https://ssapi6.shipstation.com');
 
